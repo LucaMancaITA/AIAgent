@@ -1,7 +1,3 @@
-import os
-import pandas as pd
-
-from llama_index.experimental.query_engine import PandasQueryEngine
 from llama_index.llms.langchain import LangChainLLM
 from llama_index.core.tools import QueryEngineTool, ToolMetadata
 from llama_index.core.agent import ReActAgent
@@ -9,31 +5,17 @@ from llama_index.core import Settings
 
 from langchain_community.llms import Ollama
 
-from prompts import new_prompt, instruction_str, context
-from note_engine import note_engine
-from pdf import pdf_engine
+from rag.utils.prompts import new_prompt, instruction_str, context
+from rag.engines.note_engine import note_engine
+from rag.engines.pdf_reader import pdf_engine
+from rag.engines.pandas_reader import df_query_engine
 
-
-# Read the dataframe
-csv_path = os.path.join("data", "dataframe.csv")
-dataframe = pd.read_csv(csv_path)
 
 # LLama2 LLM
 llm = Ollama(model="codellama")
 llm = LangChainLLM(llm)
-Settings.llm = llm
 
-# Pandas query engine
-df_query_engine = PandasQueryEngine(
-    df=dataframe,
-    #llm=llm,
-    verbose=True,
-    instruction_str=instruction_str
-)
-df_query_engine.update_prompts(
-    {"pandas_prompt": new_prompt}
-)
-
+# Tools
 tools = [
     note_engine,
     QueryEngineTool(
@@ -50,9 +32,10 @@ tools = [
         ))
 ]
 
+# Agent
 agent = ReActAgent.from_tools(
     tools,
-    #llm=llm,
+    llm=llm,
     verbose=True,
     context=context
 )
